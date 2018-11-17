@@ -1,0 +1,131 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="STYLESHEET" type="text/css" href="../css/newReceiptStyle.css">
+<link rel="STYLESHEET" type="text/css" href="../css/selector.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="../js/selector.js" type="text/javascript"></script>
+<title>Documento sin título</title>
+</head>
+<body>
+
+  <header>
+		<div class="headerPhoto">
+			<img id="logoImg" src="../images/points.png" alt="logo">
+		</div>
+		<div class="headerText">
+      IF THEN THAT
+      <div class="headerSettings">
+        <a class="goTo" href="#userSettings">User Settings</a> | <a class="goTo" href="../index.html">Log Out</a>
+      </div>
+    </div>
+
+	</header>
+
+  <div class="main_container">
+    <div class="main_container_title">
+      Create new receipt:
+    </div>
+
+    <div class="main_container_text1">
+      IF
+    </div>
+
+    <div class="custom-select">
+      <select>
+        <option value="0">Select option:</option>
+        <option value="1">Ligth</option>
+        <option value="2">Time</option>
+        <option value="3">Button</option>
+        <option value="4">Luminosity</option>
+        <option value="5">Acceleration</option>
+        <option value="6">Date</option>
+        <option value="7">Date-time</option>
+      </select>
+    </div>
+
+    <div class="custom-select">
+      <select>
+        <option value="0">Select quantifier:</option>
+        <option value="1">></option>
+        <option value="2"><</option>
+        <option value="3">=</option>
+      </select>
+    </div>
+
+    <input class="valueText" type="text" name="Value1" placeholder="Introduce Value">
+
+    <div class="main_container_text1">
+      AND
+    </div>
+
+    <div class="custom-select">
+      <select>
+        <option value="0">Select option:</option>
+        <option value="1">Ligth</option>
+        <option value="2">Time</option>
+        <option value="3">Button</option>
+        <option value="4">Luminosity</option>
+        <option value="5">Acceleration</option>
+        <option value="6">Date</option>
+        <option value="7">Date-time</option>
+      </select>
+    </div>
+
+    <div class="custom-select">
+      <select>
+        <option value="0">Select quantifier:</option>
+        <option value="1">></option>
+        <option value="2"><</option>
+        <option value="3">=</option>
+      </select>
+    </div>
+
+    <input class="valueText" type="text" name="Value2" placeholder="Introduce Value">
+
+    <div class="main_container_text2">
+      THEN
+    </div>
+
+    <div id="then1" class="custom-select">
+        <select>
+          <option value="0">Select option:</option>
+          <option value="1">Turn on</option>
+          <option value="2">Turn off</option>
+          <option value="3">Change color</option>
+          <option value="4">Make sound</option>
+          <option value="5">Send email</option>
+        </select>
+    </div>
+
+    <div id="then2" class="custom-select">
+        <select>
+          <option value="0">Select option:</option>
+          <option value="1">Light 1</option>
+          <option value="2">Light 2</option>
+          <option value="3">Speaker 1</option>
+          <option value="4">Speaker 2</option>
+        </select>
+    </div>
+
+    <input id="then3" class="valueText" type="text" name="Value3" placeholder="Introduce Value">
+    </div>
+
+    <div class="createButton" onclick="createNewReceipt()">
+      Create new receipt
+    </div>
+
+  </div>
+
+  <footer>
+    <ul>
+      <li><a href="#copyright"><img id="copyright" src="../images/copyright.png" alt="copyright"> 2018 Ubiquitous Computing</a>|</li>
+      <li><a href="#instagram"><img id="instagram" src="../images/instagram.png" alt="instagram"></a>|</li>
+      <li><a href="#facebook"><img id="facebook" src="../images/facebook.png" alt="facebook"></a>|</li>
+      <li><a href="#twitter"><img id="twitter" src="../images/twitter.png" alt="twitter"></a></li>
+    </ul>
+  </footer>
+
+</body>
+</html>

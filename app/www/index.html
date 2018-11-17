@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<html>
+    <head>
+        <!--
+        Customize this policy to fit your own app's needs. For more guidance, see:
+            https://github.com/apache/cordova-pluvgin-whitelist/blob/master/README.md#content-security-policy
+        Some notes:
+            * gap: is required only on iOS (when using UIWebView) and is needed for JS->native communication
+            * https://ssl.gstatic.com is required only on Android and is needed for TalkBack to function properly
+            * Disables use of inline scripts in order to mitigate risk of XSS vulnerabilities. To change this:
+                * Enable inline JS: add 'unsafe-inline' to default-src
+        -->
+      <meta http-equiv="Content-Security-Policy" content="default-src: 'http://localhost:8080', 'ws://localhost:8080'; data: gap: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src * blob:; img-src 'self' data: content:;">
+        <meta name="format-detection" content="telephone=no">
+        <meta name="msapplication-tap-highlight" content="no">
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
+        <link rel="STYLESHEET" type="text/css" href="css/indexStyle.css">
+  <title>IF THEN THAT</title>
+    </head>
+    <body>
+        <div class="app">
+          <header>
+        		<div class="headerPhoto">
+        			<img id="logoImg" src="img/points.png" alt="logo">
+        		</div>
+        		<div class="headerText">IF THEN THAT</div>
+        	</header>
+        	<div class="main_container">
+        		<div class="mainTextTitle">
+        			Iniciar Sesión:
+        		</div>
+        		<form name="LoginForm" >
+
+        			<div class="email_password_container">
+        				<div class="textFormStyle">
+        					Email:
+        				</div>
+        				<input id="email" class="loginStyle" type="email" name="Email" placeholder="Email" required>
+        			</div>
+
+        			<div class="email_password_container">
+        				<div class="textFormStyle">
+        					Password:
+        				</div>
+        				<input id="password" class="loginStyle" type="password" name="Password" placeholder="Password" pattern="^[a-z0-9]*$" required>
+        			</div>
+        			<input class="loginSubmit" id="btnSubmit"  type="button" value="Login">
+        		</form>
+
+        		<div class="textContainerLeft">
+        			<a class="goTo" href="pages/newAccount.html">Crear nueva cuenta</a>
+        		</div>
+
+        		<div class="textContainerRight">
+        			<a class="goTo" href="pages/recoverAccount.html">¿Olvidó su contraseña?</a>
+        		</div>
+
+        	</div>
+
+        	<footer>
+            <ul>
+              <li><a href="#copyright"><img id="copyright" src="img/copyright.png" alt="copyright"> 2018 Ubiquitous Computing</a>|</li>
+              <li><a href="#instagram"><img id="instagram" src="img/instagram.png" alt="instagram"></a>|</li>
+              <li><a href="#facebook"><img id="facebook" src="img/facebook.png" alt="facebook"></a>|</li>
+              <li><a href="#twitter"><img id="twitter" src="img/twitter.png" alt="twitter"></a></li>
+            </ul>
+          </footer>
+
+
+        </div>
+
+
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
+        <script type="text/javascript" src="js/index.js"></script>
+    </body>
+</html>
