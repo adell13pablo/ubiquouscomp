@@ -21,6 +21,9 @@
     </div>
 
     <form name="registerForm">
+
+      <input id=username class="registerStyle2" type="text" name="Username" placeholder="Username" required>
+
       <input id="name" class="registerStyle1" type="text" name="Name" placeholder="Nombre" required>
 
       <input id="surname" class="registerStyle1" type="text" name="Surname" placeholder="Apellidos" required>
@@ -31,7 +34,7 @@
 
       <input id="passwordRepeat" class="registerStyle1" type="password" name="PasswordRepeat" placeholder="Repetir contraseña" required>
 
-      <input class="createAccountSubmit" type="submit" value="Create Account">
+      <input id="createAccount" class="createAccountSubmit" type="button" value="Create Account">
 
     </form>
   </div>
@@ -44,6 +47,9 @@
       <li><a href="#twitter"><img id="twitter" src="../images/twitter.png" alt="twitter"></a></li>
     </ul>
   </footer>
+
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
+  <script type="text/javascript" src="../js/newAccount.js"></script>
 
 </body>
 </html>

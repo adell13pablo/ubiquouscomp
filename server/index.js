@@ -11,16 +11,18 @@ var mongoose = require('mongoose');
 var myStorage = require('./Storage.js');
 storage = myStorage.DButilites;
 // connect to db
-var dbName = 'projectUbicua'
+var dbName = 'icarusapp'
 mongoose.connect('mongodb://localhost/' + dbName, { useNewUrlParser: true , useCreateIndex: true });
 
 // check connection status
 const db = mongoose.connection;
+console.log(db.collections.models);
 console.log("DATABASE: "+db);
 // error handler connection to db
 db.on('error', console.error.bind(console, 'connection error:'));
 
 var users = [];
+var actual_user;
 var rules = [];
 var socket;
 var username;
@@ -41,6 +43,7 @@ var date_time_local;
 
 
 db.once('open', function() {
+	console.log("Connected to database " + db.name);
 	/*DO NOTHING---->USED TO OPEN DE DATABASE*/
 });
 
@@ -65,6 +68,8 @@ io.on('connection', (client)=>{ //It fires its own connection event when the use
 
 	client.on('disconnect', ()=> { // It also has its own disconnection event that fires when user close a tab
 		console.log("user disconnected");
+		actual_user = null;
+		sessionStorage.setItem("User", null);
 		client.emit('disconnected');
 	});
 	
@@ -108,13 +113,8 @@ io.on('connection', (client)=>{ //It fires its own connection event when the use
 			*/
 			console.log("DATABASE: "+db);
 
-			console.log("usuario creado");
 			storage.storeUserInMyDB(data.username, data.name, data.surname, data.email, data.password, '1234567890');
 			console.log("usuario creado");
-
-		/*Promise.all(promises)
-		.then(function() { console.log("user stored"); })
-		.catch(console.error);*/
 
 		client.emit('userCreated');
 	});
@@ -122,14 +122,20 @@ io.on('connection', (client)=>{ //It fires its own connection event when the use
 	/*
 		RECEIVE SIGN IN REQUEST FROM A USER
 		*/
-		client.on('signIn', (data)=>{
+		client.on('signIn', (data) => {
 			console.log("User "+data.username+" signed in, its password is: "+data.password);
 			/* Check if the user exists in the database */
 
-			storage.findUserInMyDB(data.username, (result)=>{
+			storage.findUserInMyDB(data.username, (result) => {
 				if(result != null){
 					if(result.password == data.password){
 						client.emit('logUserTrue');
+						actual_user = result;
+						sessionStorage.User = result; //Update local and globa instance of user as well as its last connection 
+						var query = {username: user.username}
+						User.findOneAndUpdate(query, { $set: {last_connection: getDate()}}, () =>{
+							console.log("User: " + actual_user.username + " last connection updated");
+						});
 					}
 					else{
 						client.emit('logUserFalse');
@@ -144,7 +150,7 @@ io.on('connection', (client)=>{ //It fires its own connection event when the use
 	/*
 		RECOVER ACCOUNT PASSWORD REQUEST
 		*/
-		client.on('recoverAccount', (data)=>{
+		client.on('recoverAccount', (data) => {
 		/*
 			Check if the email written belongs to a user
 			*/

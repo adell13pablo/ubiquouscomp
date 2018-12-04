@@ -11,6 +11,8 @@ var userSchema = new mongoose.Schema({
 	email: String,
 	password: String,
 	token: String
+	refresh_token: String, //Added to store user's refresh token
+	last_connected: Date,
 }, {minimize: false});
 
 // users queries definition

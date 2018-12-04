@@ -35,7 +35,7 @@
         <link rel="STYLESHEET" type="text/css" href="css/indexStyle.css">
   <title>IF THEN THAT</title>
     </head>
-    <body>
+    <body onunload="goodBye();">
         <div class="app">
           <header>
         		<div class="headerPhoto">
@@ -51,26 +51,26 @@
 
         			<div class="email_password_container">
         				<div class="textFormStyle">
-        					Email:
+        					Username:
         				</div>
-        				<input id="email" class="loginStyle" type="email" name="Email" placeholder="Email" required>
+        				<input id="emailLogin" class="loginStyle" type="email" name="Email" placeholder="Username" required>
         			</div>
 
         			<div class="email_password_container">
         				<div class="textFormStyle">
         					Password:
         				</div>
-        				<input id="password" class="loginStyle" type="password" name="Password" placeholder="Password" pattern="^[a-z0-9]*$" required>
+        				<input id="passwordLogin" class="loginStyle" type="password" name="Password" placeholder="Password" pattern="^[a-z0-9]*$" required>
         			</div>
         			<input class="loginSubmit" id="btnSubmit"  type="button" value="Login">
         		</form>
 
         		<div class="textContainerLeft">
-        			<a class="goTo" href="pages/newAccount.html">Crear nueva cuenta</a>
+        			<a id="newAccount" class="goTo" href="pages/newAccount.html">Crear nueva cuenta</a>
         		</div>
 
         		<div class="textContainerRight">
-        			<a class="goTo" href="pages/recoverAccount.html">¿Olvidó su contraseña?</a>
+        			<a id="recoverAccount" class="goTo" href="pages/recoverAccount.html">¿Olvidó su contraseña?</a>
         		</div>
 
         	</div>

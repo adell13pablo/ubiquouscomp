@@ -18,52 +18,59 @@
  */
 
 
-
+var socket;
+var exit = 1;
 
 var app = {
     // Application Constructor
     initialize: function() {
       console.log("Dentro");
-      var socket = io.connect('http://localhost:3000');
-      socket.emit('user_logged', {msg: "Tommy"});
-      document.addEventListener('deviceready', function(){
-
-      socket.on('session_on', function () {
-                  socket.on('text', function (text) {
-                      console.log(text);
-                  });
-              });
-
-      socket.on("image_data_from_server", (imageData)=>{
-         var imgElement = document.createElement('img');
-         imgElement.src = "data:image/jpeg;base64," + imageData;
-         document.body.appendChild(imgElement);
-              });
-      });
-
-
-
-    },
-
-    // deviceready Event Handler
-    //
-    // Bind any cordova events here. Common events are:
-    // 'pause', 'resume', etc.
-    onDeviceReady: function() {
-        this.receivedEvent('deviceready');
-    },
-
-    // Update DOM on a Received Event
-    receivedEvent: function(id) {
-        var parentElement = document.getElementById(id);
-        var listeningElement = parentElement.querySelector('.listening');
-        var receivedElement = parentElement.querySelector('.received');
-
-        listeningElement.setAttribute('style', 'display:none;');
-        receivedElement.setAttribute('style', 'display:block;');
-
-        console.log('Received Event: ' + id);
+      socket = io.connect('http://localhost:3000');
     }
 };
 
 app.initialize();
+
+
+document.getElementById("btnSubmit").addEventListener('click', () =>{
+
+	var username = document.getElementById('emailLogin').value;
+	var pass = document.getElementById('passwordLogin').value;
+
+	if((username === "") || (pass === ""))
+		return;
+	
+	socket.emit('signIn', {username: username, password: pass});
+
+	socket.on('logUserTrue',(data)=>{
+		console.log("valid user");
+		exit = 0;
+		localStorage.setItem('actualUser', username);
+		socket.emit('user_logged', {userMail: username});
+		location.href="../pages/home.html";
+	});
+
+	socket.on('logUserFalse', (data)=>{
+		console.log("User does not exist");
+		window.alert("User does not exist");
+	});
+});
+
+document.getElementById("recoverAccount").addEventListener('click',()=>{
+	exit = 0;
+});
+
+document.getElementById("newAccount").addEventListener('click',()=>{
+	exit = 0;
+});
+
+
+/*
+	NOTIFY THE SERVER THAT THE USER HAS LOGGED OUT
+*/
+function goodBye(){
+	if(exit === 1){
+		window.alert("GoodBye again");
+		socket.emit('logged_out', {userMail: sessionStorage.getItem("User").email});
+	}
+}
