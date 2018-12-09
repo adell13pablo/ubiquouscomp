@@ -4,16 +4,18 @@ var mongoose = require('mongoose');
 var storage = {};
 
 // users schema definition
-var userSchema = new mongoose.Schema({
+var userSchema =  mongoose.Schema({
 	username: {type: String, unique: true},
-	name: String,
-	surname: String,
-	email: String,
-	password: String,
-	token: String
-	refresh_token: String, //Added to store user's refresh token
-	last_connected: Date,
-}, {minimize: false});
+	name: {type: String, default: null},
+	surname: {type: String, default: null},
+	googleID: {type: String, default: null},
+	email: {type: String, default: null},
+	password: {type: String, default: null},
+	token: {type: String, default: null},
+	refresh_token: {type: String, default: null}, //Added to store user's refresh token
+	last_connected: {type: Date, default: Date.now},
+	is_authorized: {type: Boolean, default: false},
+});
 
 // users queries definition
 userSchema.query.byUsername = function(username) {
@@ -58,9 +60,16 @@ storage.findUserTokeninMyDB = function(username, callback) {
 	});
 };
 
+
 // get the token with the given username
 storage.findUserInMyDB = function(username, callback) {
 	User.findOne().byUsername(username).exec(function(err, user) {
+	 	callback(user);
+	});
+};
+
+storage.findUserInMyDBbyEmail = function(email, callback) {
+	User.findOne().byEmail(email).exec(function(err, user) {
 	 	callback(user);
 	});
 };
@@ -98,3 +107,4 @@ storage.changeReceiptState = function(id, callback) {
 };
 
 exports.DButilites = storage;
+exports.User = User;

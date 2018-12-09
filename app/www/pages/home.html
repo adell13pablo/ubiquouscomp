@@ -3,27 +3,31 @@
 <head>
 <meta charset="utf-8">
 <link rel="STYLESHEET" type="text/css" href="../css/homeStyle.css">
-<title>Documento sin título</title>
+  <meta name="google-signin-client_id" content="245262156183-pucpu4o1c95c2e6u3h41egkmataa7265.apps.googleusercontent.com">
+  <script src="https://apis.google.com/js/platform.js" async defer></script>
+
+<title>Home</title>
 </head>
 <body>
 
   <header>
 		<div class="headerPhoto">
-			<img id="logoImg" src="../images/points.png" alt="logo">
+			<img id="logoImg" src="../img/points.png" alt="logo">
 		</div>
 		<div class="headerText">
       IF THEN THAT
       <div class="headerSettings">
-        <a class="goTo" href="#userSettings">User Settings</a> | <a class="goTo" href="../index.html">Log Out</a>
+        <a class="goTo" href="#userSettings">User Settings</a> | <a id="google_out" href="#" onclick="signOut();">Sign out</a> | <a href="#" id="oauth">Authorize</a> | <a href="#" onclick="window.location.href='home.html';"
       </div>
     </div>
 
 	</header>
 
   <div class="main_container">
-    <div class="main_container_title">
-      Hello David:
+    <div class="main_container_title" id="main_title">
+      
     </div>
+      
 
     <div class="main_options" onclick="window.location.href='myReceipts.html'">
       See my receipts
@@ -36,10 +40,10 @@
 
   <footer>
     <ul>
-      <li><a href="#copyright"><img id="copyright" src="../images/copyright.png" alt="copyright"> 2018 Ubiquitous Computing</a>|</li>
-      <li><a href="#instagram"><img id="instagram" src="../images/instagram.png" alt="instagram"></a>|</li>
-      <li><a href="#facebook"><img id="facebook" src="../images/facebook.png" alt="facebook"></a>|</li>
-      <li><a href="#twitter"><img id="twitter" src="../images/twitter.png" alt="twitter"></a></li>
+      <li><a href="#copyright"><img id="copyright" src="../img/copyright.png" alt="copyright"> 2018 Ubiquitous Computing</a>|</li>
+      <li><a href="#instagram"><img id="instagram" src="../img/instagram.png" alt="instagram"></a>|</li>
+      <li><a href="#facebook"><img id="facebook" src="../img/facebook.png" alt="facebook"></a>|</li>
+      <li><a href="#twitter"><img id="twitter" src="../img/twitter.png" alt="twitter"></a></li>
     </ul>
   </footer>
 

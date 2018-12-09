@@ -1,5 +1,5 @@
 var socket = io.connect('http://localhost:3000');
-
+socket.emit('session', window.sessionStorage);
 function createNewReceipt(){
 
 	var trigger1 = $('#trigger1 :selected').text();
@@ -356,7 +356,7 @@ function createNewReceipt(){
 		}
 
 		socket.emit('newReceipt',{user: localStorage.getItem('actualUser'), description: description});
-		
+		window.location = "/pages/home.html";
 	}else{
 		return;
 	}

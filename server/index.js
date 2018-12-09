@@ -1,15 +1,20 @@
+
+
 const express = require('express');
 const app = express();
 const server = require('http').Server(app);  //Express initializes app to be function handler that you can supply to an HTTP server
 const io = require('socket.io')(server); //socket io is formed by the server and the client part. we use it to communicate both. Here we initialize the socket passing the server reference
 var path = require('path');
 var Bean = require('ble-bean');
+var google = require('./google_API.js');
 var beanStream = require('ble-bean-stream'); //Transforma datos de Bean a JSON escuchando en el puerto serial
 const _ = require('lodash');
 /* MongoDB required packages */
 var mongoose = require('mongoose');
 var myStorage = require('./Storage.js');
 storage = myStorage.DButilites;
+var Usermodel = myStorage.User;
+var actual_user;
 // connect to db
 var dbName = 'icarusapp'
 mongoose.connect('mongodb://localhost/' + dbName, { useNewUrlParser: true , useCreateIndex: true });
@@ -21,8 +26,9 @@ console.log("DATABASE: "+db);
 // error handler connection to db
 db.on('error', console.error.bind(console, 'connection error:'));
 
+
 var users = [];
-var actual_user;
+var actual_user = null;
 var rules = [];
 var socket;
 var username;
@@ -34,9 +40,10 @@ var y_axis_old;
 var z_axis_old;
 
 
-var temperature_local;
-var luminosity_local;
-var acceleration_local;
+var temperature_local = 0;
+var luminosity_local = 0;
+var gesture_local = " ";
+var buttonState_local = 0; 
 var date_local;
 var time_local;
 var date_time_local;
@@ -46,12 +53,15 @@ db.once('open', function() {
 	console.log("Connected to database " + db.name);
 	/*DO NOTHING---->USED TO OPEN DE DATABASE*/
 });
+app.use('/auth',express.static('auth'));
 
-/*app.get('/', function (req, res) { //gets called when we hit our website home.
+app.use('/auth/oauthcallback', function (req, res) { //gets called when we hit our website home.
 //res.send('Hello, this is my server!'); //Express sets up the landpage of the server, sending info
 //However, setting the html like this can be a little bit messy, that is why we create a index.html that would be loaded when we hit our website home
-res.sendFile(__dirname + '/index.html');
-});*/
+console.log(req.query);
+google.googleCodes(req.query['code']);
+return res.redirect('http://localhost:8000/pages/home.html');
+});
 
 //app.use(express.static(path.join(__dirname, 'public'))); //Line to make css files, that are static, public so that the clients can retrieve them
 
@@ -61,32 +71,29 @@ io.on('connection', (client)=>{ //It fires its own connection event when the use
 	var index = users.indexOf(username); //Checking if the user has any open session that it has not been closed
 	console.log("users array length: "+index);
 	if(index > -1){
-		console.log("User has an open session");
+		console.log("User has an open session " + client);
 		username = users[index];
 		io.emit('session_on', {msg: 'user has session on'});
 	}
+	io.emit("googleURL", {url: google.googleURL});
 
 	client.on('disconnect', ()=> { // It also has its own disconnection event that fires when user close a tab
 		console.log("user disconnected");
-		actual_user = null;
-		sessionStorage.setItem("User", null);
+		
 		client.emit('disconnected');
 	});
-	
-	client.on('user_logged', (msg)=>{
-		var exists = users.indexOf(msg.userMail); //Checking if the user has any open session that it has not been closed
-		console.log("does user "+msg.userMail+" exist? -Answer:  "+exists)
-		if(exists > -1){
-			console.log("User has an open session");
-			username = users[exists];
-		}else{
-			username =  msg.userMail;
-			users.push(username);
-			console.log("Login new user" + users.length);
-
-		}
 
 
+
+	client.on("googleUserID", (data) =>{
+		var query = {'email':data.email};
+		Usermodel.findOneAndUpdate(query, {email: data.email, name: data.name, surname: data.surname, username: data.email, googleID: data.googleID, token: null, 
+			refresh_token: null, is_authorized: false, last_connected: null},
+		 {upsert:true}, function(err, doc){
+		    if (err) console.log("Error " + err);
+		    else console.log("Update googleID")
+		});
+		
 	});
 
 	client.on('logged_out', (msg)=>{
@@ -99,7 +106,10 @@ io.on('connection', (client)=>{ //It fires its own connection event when the use
 	});
 
 
-
+	client.on("request_user", (data)=>{
+		var user = Usermodel.find({'email':data.email});
+		
+	});
 
 
 
@@ -113,16 +123,20 @@ io.on('connection', (client)=>{ //It fires its own connection event when the use
 			*/
 			console.log("DATABASE: "+db);
 
-			storage.storeUserInMyDB(data.username, data.name, data.surname, data.email, data.password, '1234567890');
+			storage.storeUserInMyDB(data.username, data.name, data.surname, data.email, data.password, '1234567890', '' , '');
 			console.log("usuario creado");
+			actual_user = storage.findUserInMyDB(data.username, function(result){
+				console.log("User creado y guardado bien");
+			});
 
-		client.emit('userCreated');
-	});
+			client.emit('userCreated');
+		});
 
 	/*
 		RECEIVE SIGN IN REQUEST FROM A USER
 		*/
 		client.on('signIn', (data) => {
+			
 			console.log("User "+data.username+" signed in, its password is: "+data.password);
 			/* Check if the user exists in the database */
 
@@ -130,12 +144,8 @@ io.on('connection', (client)=>{ //It fires its own connection event when the use
 				if(result != null){
 					if(result.password == data.password){
 						client.emit('logUserTrue');
-						actual_user = result;
-						sessionStorage.User = result; //Update local and globa instance of user as well as its last connection 
-						var query = {username: user.username}
-						User.findOneAndUpdate(query, { $set: {last_connection: getDate()}}, () =>{
-							console.log("User: " + actual_user.username + " last connection updated");
-						});
+						setUser(data.username);			
+
 					}
 					else{
 						client.emit('logUserFalse');
@@ -215,146 +225,100 @@ function getReceiptsHandler(result) {
 server.listen(3000, function () { //Function lo listen to port 3000,when loading  http://localhost:3000/  displays the content of the get function
 	console.log('Listening to port 3000');
 	console.log('Discovering Bean');
-
-
-
 	Bean.discover( (bean) =>{
 		if(bean.id == '987bf3591d4e'){
 			myBean = bean;
 			bean.connectAndSetup(function(){
-
 				console.log("Bean connected");
-
-
-
-
-
 				setInterval(function(){
-
+				
 					//('Asking the bean for acceleration');
 					bean.requestAccell(acceleration);
 
 					//('Asking the bean for acceleration');
 					bean.requestTemp(temperature);
-
-
-					luminosity_local = () => {
-						bean.notifyThree(function(data){
-							if(data){
-								console.log("Scratch Three(Luminosidad):" + data.readUInt8(0));
-								return evaluateLight(data.readUInt8(0));
-
-							}
-						}, function(error){
-							if(error) console.log("error on Three > ", error)
-								return null;
-						});			
-
-					}; /* Set value corresponding to the one received by the LBE */
-
-					temperature_local = () =>	{ /* Set value corresponding to the one received by the LBE */
-						bean.on('temp', function(temp){
-							console.log("Temperatura es: " + temp);
-							return temp;
-						});
-					}; 
-					acceleration_local = () => { /* Implement function *//* Set value corresponding to the one received by the LBE */
-						bean.on('accell', function(x, y, z){
-							console.log("X: " + x + "Y: " + y + "Z: " + z);
-							var shake = Math.sqrt(x*x+y*y+z*z);
-							if(shake >= 2.0){
-								console.log('shake');
-								return "shake";
-							}
-						});
-					};
-
+					luminosity(); //Get luminosity from board
+					buttonState();
 					date_local = getDate();
 					time_local = getTime();
 					date_time_local = getDate()+"-"+getTime();
-					buttonState_local = () => {
-						bean.notifyFour(function(data){
-							if(data){
-								console.log("Scratch Four (Button):" + data.readUInt8(0));
-								evaluateButton(data.readUInt8(0));
-							}
-						}, function(error){
-							if(error) console.log("error on Four > ", error);
-						});
-
-					}; /* true for active / false for inactive */
 
 					console.log("Luminosity: "+luminosity_local);
 					console.log("Temperature: "+temperature_local);
-					console.log("Acceleration: "+acceleration_local);
+					console.log("Gesture: "+gesture_local);
+					console.log("Button_State: " + buttonState_local);
 					console.log("Date: "+date_local);
 					console.log("Time: "+time_local);
 					console.log("Date-time: "+date_time_local);
 
-					/* Check active receipts */
+					// Check active receipts if user is active
+					
+				
+						storage.findUserReceiptsMyDB('adell13pablo', (result)=>{
+							
+							for(i = 0; i < result.length; i++){
+							
+								if(result[i].active == true){
 
-					storage.findUserReceiptsMyDB('darroyomartin', (result)=>{
+									var firstCondition = result[i].firstCondition;
+									var secondCondition = result[i].secondCondition;
+									var action = result[i].action;
 
-						for(i = 0; i < result.length; i++){
+									if(fullfilsCondition(firstCondition.split(" ")[0], firstCondition.split(" ")[1], firstCondition.split(" ")[2])){
+										if(secondCondition != ""){
+											if(fullfilsCondition(secondCondition.split(" ")[0], secondCondition.split(" ")[1], secondCondition.split(" ")[2])){
 
-							if(result[i].active == true){
+												if(action.split(" ").length > 3){
+													execAction(action.split(" ")[0]+" "+action.split(" ")[1], action.split(" ")[2]+" "+action.split(" ")[3]);
+												}
+												else{
+													execAction(action.split(" ")[0]+" "+action.split(" ")[1], action.split(" ")[2]);
+												}
+											}
 
-								var firstCondition = result[i].firstCondition;
-								var secondCondition = result[i].secondCondition;
-								var action = result[i].action;
-
-								if(fullfilsCondition(firstCondition.split(" ")[0], firstCondition.split(" ")[1], firstCondition.split(" ")[2])){
-									if(secondCondition != ""){
-										if(fullfilsCondition(secondCondition.split(" ")[0], secondCondition.split(" ")[1], secondCondition.split(" ")[2])){
+										}else{
 
 											if(action.split(" ").length > 3){
+												console.log("Executing action");
 												execAction(action.split(" ")[0]+" "+action.split(" ")[1], action.split(" ")[2]+" "+action.split(" ")[3]);
 											}
 											else{
 												execAction(action.split(" ")[0]+" "+action.split(" ")[1], action.split(" ")[2]);
 											}
 										}
-
-									}else{
-
-										if(action.split(" ").length > 3){
-											execAction(action.split(" ")[0]+" "+action.split(" ")[1], action.split(" ")[2]+" "+action.split(" ")[3]);
-										}
-										else{
-											execAction(action.split(" ")[0]+" "+action.split(" ")[1], action.split(" ")[2]);
-										}
 									}
-								}
 
-							}else{
-								console.log("RECEIPT: "+result[i]._id+" is inactive");
+								}else{
+									console.log("RECEIPT: "+result[i]._id+" is inactive");
+								}
 							}
-						}
-					});
+						});
+					
 
 				}, 1000);
 
 
-				});
 
-			}
-		});
+
+
+			});
+		}
+	});
 });
-
-			/* Get date */
-			function getDate(){
-				var date = new Date();
-				var date_str = (date.getDate() < 10 ? '0'+date.getDate() : ''+date.getDate())+"/"+((date.getMonth()+1) < 10 ? '0'+(date.getMonth()+1) : ''+(date.getMonth()+1))+"/"+date.getFullYear();
-				return date_str;
-			}
-			function getTime(){
-				var time = new Date();
-				var time_str = (time.getHours() < 10 ? '0'+time.getHours() : ''+time.getHours())+":"+(time.getMinutes() < 10 ? '0'+time.getMinutes() : ''+time.getMinutes())+":"+(time.getSeconds() < 10 ? '0'+time.getSeconds() : ''+time.getSeconds());
-				return time_str;
-			}
+/* Get date */
+function getDate(){
+	var date = new Date();
+	var date_str = (date.getDate() < 10 ? '0'+date.getDate() : ''+date.getDate())+"/"+((date.getMonth()+1) < 10 ? '0'+(date.getMonth()+1) : ''+(date.getMonth()+1))+"/"+date.getFullYear();
+	return date_str;
+}
+function getTime(){
+	var time = new Date();
+	var time_str = (time.getHours() < 10 ? '0'+time.getHours() : ''+time.getHours())+":"+(time.getMinutes() < 10 ? '0'+time.getMinutes() : ''+time.getMinutes())+":"+(time.getSeconds() < 10 ? '0'+time.getSeconds() : ''+time.getSeconds());
+	return time_str;
+}
 
  //Evaluation Functions
- function evaluateLight(data){
+ /*function evaluateLight(data){
  	return data;
  	/*if(data < 40){
 
@@ -367,26 +331,68 @@ server.listen(3000, function () { //Function lo listen to port 3000,when loading
  		buffer[0] = 0;
  		myBean.writeThree(buffer, function(){console.log("Lights down");});
 
- 	}*/
- }
+ 	}
+ }*/
 
  function evaluateButton(data){
  	return data;
  	if(data === 1){
  		return true;
- 		/*var buffer = new Buffer(1);
- 		buffer[0] = 1;
- 		
- 		myBean.writeFour(buffer, function(){console.log("Playing tune");});*/
+
  	}
  	return false;
  }
 
 
 
+ var luminosity = function () {
+ 	myBean.notifyThree(function(data){
+ 		if(data){
+								//console.log("Scratch Three(Luminosidad):" + data.readUInt8(0));
+								luminosity_local = data.readUInt8(0);
+							}
+						}, function(error){
+							if(error) console.log("error on Three > ", error)
+								return null;
+						});
+
+
+ }; /* Set value corresponding to the one received by the LBE */
 
 
 
+ var temperature= () =>	{ /* Set value corresponding to the one received by the LBE */
+ 	myBean.on('temp', function(temp){
+							//console.log("Temp es: " + temp);
+							temperature_local = temp;
+							
+						});
+ }; 
+ var acceleration = () => { /* Implement function *//* Set value corresponding to the one received by the LBE */
+ 	myBean.on('accell', function(x, y, z){
+							//console.log("X: " + x + "Y: " + y + "Z: " + z);
+							var shake = Math.sqrt(x*x+y*y+z*z);
+							if(shake >= 2.0){
+								//console.log('shake');
+								gesture_local ="shake";
+							}else{
+								gesture_local= "none";
+							}
+						});
+
+ };
+
+ var buttonState = () => {
+ 	myBean.notifyFour(function(data){
+ 		if(data){
+								//console.log("Scratch Four (Button):" + data.readUInt8(0));
+								buttonState_local = evaluateButton(data.readUInt8(0));
+							}
+						}, function(error){
+							if(error) console.log("error on Four > ", error);
+						});
+
+ }; /* true for active / false for inactive */
 
  /* Evaluate state of an active rule */
  function fullfilsCondition(what, quantifier, text){
@@ -394,6 +400,7 @@ server.listen(3000, function () { //Function lo listen to port 3000,when loading
  	if(what == "Luminosity"){
 
  		if(quantifier == ">"){
+
  			if(luminosity_local > text){
  				return true;
  			}else{ 
@@ -401,6 +408,7 @@ server.listen(3000, function () { //Function lo listen to port 3000,when loading
  			}
 
  		}else if(quantifier == "<"){
+ 			console.log(luminosity_local + "<" + text);
  			if(luminosity_local < text){
  				return true;
  			}else{
@@ -634,30 +642,58 @@ function compareTimes(time1, time2, quantifier){
 }
 
 function execAction(action, where){
-
+	var buffer = new Buffer(1);
+	var buffer_2 = new Buffer(1);
 	if(action == "Turn on"){
 		if(where == "Light 1"){
-			console.log(action+" "+where);
+			//console.log(action+" "+where);
+			buffer[0] = 1;
+			myBean.writeTwo(buffer, function(){console.log("Turning on Light 1");}); //So that if two options are for the same LED they do not overlapse
+
 		}else if(where == "Light 2"){
-			console.log(action+" "+where);
+			//console.log(action+" "+where);
+			buffer[0] = 2;
+			myBean.writeTwo(buffer, function(){console.log("Turning on Light 2");}); //So that if two options are for the same LED they do not overlapse
+
 		}else{
 			/* ERROR */
 		}
 	}else if(action == "Turn off"){
 		if(where == "Light 1"){
-			console.log(action+" "+where);
+			//console.log(action+" "+where);
+			buffer[0] = 4;
+			myBean.writeTwo(buffer, function(){console.log("Turning off Light 1");});
+
 		}else if(where == "Light 2"){
-			console.log(action+" "+where);
+			//console.log(action+" "+where);
+			buffer[0] = 5;
+			myBean.writeTwo(buffer, function(){console.log("Turning off Light 2");});
+
 		}else{	
 			/* ERROR */
 		}
 	}else if(action == "Change color"){
+		
 		if(where == "RGB-LED Red"){
-			console.log(action+" "+where);
+			//console.log(action+" "+where);
+			buffer[0] = 255;
+			buffer[1] = 0;
+			buffer[2] = 0;
+			myBean.setColor(new Buffer([0xFF,0x0,0x0]), () => console.log("Cambiando a rojo"));
+
 		}else if(where == "RGB-LED Blue"){
-			console.log(action+" "+where);
+			//console.log(action+" "+where);
+			buffer[0] = 0;
+			buffer[1] = 0;
+			buffer[2] = 0;
+			myBean.setColor(new Buffer([0x0,0x0,0xFF]), () => console.log("Cambiando a azul"));
+
 		}else if(where == "RGB-LED Purple"){
-			console.log(action+" "+where);
+			//console.log(action+" "+where);
+			buffer[0] = 75;
+			buffer[1] = 0;
+			buffer[2] = 178;
+			myBean.setColor(new Buffer([0x4B,0x00,0xB2]), () => console.log("Cambiando a morado"));
 		}else{
 			/* ERROR */
 		}
@@ -665,10 +701,16 @@ function execAction(action, where){
 	}else if(action == "Play sound"){
 		if(where == "Noise 1"){
 			console.log(action+" "+where);
+			buffer[0] = 1;
+			myBean.writeOne(buffer, function(){console.log("Sound 1");});
 		}else if(where == "Noise 2"){
 			console.log(action+" "+where);
+			buffer[0] = 2;
+			myBean.writeOne(buffer, function(){console.log("Sound 1");});
 		}else if(where == "Noise 3"){
 			console.log(action+" "+where);
+			buffer[0] = 3;
+			myBean.writeOne(buffer, function(){console.log("Sound 1");});
 		}else{
 			/* ERROR */
 		}
@@ -677,5 +719,9 @@ function execAction(action, where){
 
 		/* Send mail to email direction stored in "where" */
 		console.log(action+" "+where);
+		google.sendEmail("adell13pablo@gmail.com", "adell13pablo@gmail.com", "adell13pablo@gmail.com", "Esta es una prueba", "Espero que te guste" );
 	}
+
+	
 }
+

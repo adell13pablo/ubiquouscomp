@@ -1,4 +1,5 @@
 var socket = io.connect('http://localhost:3000');
+socket.emit('session', window.sessionStorage);
 console.log("pasa2");
 
 

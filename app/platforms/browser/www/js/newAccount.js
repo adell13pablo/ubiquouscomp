@@ -1,5 +1,5 @@
 var socket = io.connect('http://localhost:3000');
-
+socket.emit('session', window.sessionStorage);
 
 
 document.getElementById("createAccount").addEventListener('click', ()=>{
@@ -19,6 +19,7 @@ document.getElementById("createAccount").addEventListener('click', ()=>{
 
 	socket.on('userCreated', (data)=> {
 		window.alert("Your account has been created");
+		session.setItem('username', username);
 		location.href="home.html";
 	});
 });

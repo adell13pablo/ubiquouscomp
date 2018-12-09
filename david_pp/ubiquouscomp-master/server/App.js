@@ -7,8 +7,9 @@ console.log(storage);
 console.log("program start");
 
 // connect to db
-var dbName = 'projectUbicua'
+var dbName = 'icarusapp'
 mongoose.connect('mongodb://localhost/' + dbName, { useNewUrlParser: true , useCreateIndex: true });
+
 
 // check connection status
 var db = mongoose.connection;
